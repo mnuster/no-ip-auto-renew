@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+# Summary:	The sccript will autorenew the provided host with login info
+# Author:	mnuster
+# Date:		July 2015
+# License:	GPLv3
+
+require 'date'
+require 'mechanize'
