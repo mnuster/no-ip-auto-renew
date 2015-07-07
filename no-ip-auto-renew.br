@@ -1,9 +1,59 @@
 #!/usr/bin/env ruby
 
-# Summary:	The sccript will autorenew the provided host with login info
+# Summary:	The script will auto-renew the provided host with login info
 # Author:	mnuster
 # Date:		July 2015
 # License:	GPLv3
 
 require 'date'
 require 'mechanize'
+
+if ARGV[0].nil? or ARGV[1].nil?
+    puts "ERROR: no arguments provided"
+    #puts "USAGE: ./no-ip-auto-renew.rb [USER] [PASS] [HOST] [UPDATE-IP?]"
+    puts "USAGE: ./no-ip-auto-renew.rb [USER] [PASS]"
+    exit(1)
+end
+
+user = ARGV[0]
+pass = ARGV[1]
+#host = ARGV[2]
+
+puts "Renewing no-ip hosts ..."
+mech = Mechanize.new
+
+# Login to no-ip and nav to member page
+mech.user_agent_alias = 'Windows IE 8'
+login_page = mech.get("https://www.noip.com/login/")
+members_page = login_page.form_with(:id => 'clogs') do |form|
+    form.username = user
+    form.password = pass
+end.submit
+
+# Nav to DNS manage page
+updated_hosts = []
+dns_page = mech.get("https://www.noip.com/members/dns/")
+dns_page.links_with(:text => "Modify").each do |link|
+    # Update each host
+    update_page = mech.click(link)
+    hostname    = update_page.forms[0].field_with(:name => "host[host]").value
+    domain      = update_page.forms[0].field_with(:name => "host[domain]").value
+    updated_hosts << "#{hostname}.#{domain}"
+    #update_page.forms[0].field_with(:name => "host[ip]").value = my_public_ip
+    update_page.forms[0].submit
+end
+
+# Report updated hosts
+if !updated_hosts.nil? and updated_hosts.size > 0
+    puts "Done. Keeping alive #{updated_hosts.size} host(s)"
+    updated_hosts.each do |host|
+        puts "- #{host}"
+    end
+else
+    puts "ERROR: no hosts to update"
+end
+
+
+
+
+
